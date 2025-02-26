@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, os::unix::fs::PermissionsExt};
 
 pub struct ProcessInfo{
     pub pid : u32,
@@ -24,8 +24,28 @@ impl Processes {
 
     pub fn print_folders(&self){
         let paths = fs::read_dir("/proc/").unwrap();
-        for path in paths{
-            println!("Name : {}", path.unwrap().path().display());
+        for entry in paths{
+           match entry{
+            Ok(dir_entry) => {
+                let metadata = dir_entry.metadata().unwrap();
+                let filename = dir_entry.file_name();
+
+                if let Some(filename_str) = filename.to_str(){
+                    match filename_str.parse::<u32>(){
+                        Ok(pid) =>{
+                            println!("Pid: {}", pid)
+                        }
+                        Err(err) =>{
+                            println!("Err: {}", err);
+                        }
+                    }
+                }
+                //println!("Pid :{:#x},  Permision: {:?}", filename.to_string_lossy().parse::<u32>().unwrap(), metadata.permissions());
+            }
+            Err(err) => {
+                println!("{}", err);
+            }
+           } 
         }
     }
 }
