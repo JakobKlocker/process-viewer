@@ -1,12 +1,16 @@
 mod process;
 
+use std::time::Duration;
+
 use process::Processes;
 
 fn main() {
-    println!("Hello, world!");
     let mut proc = Processes::new();
-    proc.get_pid_name().unwrap();
-    for pro in proc.processes{
+    for pro in &proc.processes{
         println!("{:?}", pro);
     } 
+    loop{
+        proc.get_new_proc_update();
+        std::thread::sleep(Duration::from_secs(1));
+    }
 }
