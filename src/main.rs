@@ -4,6 +4,9 @@ use process::Processes;
 
 fn main() {
     println!("Hello, world!");
-    let proc = Processes::new();
-    proc.print_folders();
+    let mut proc = Processes::new();
+    proc.get_pid_name().unwrap();
+    for pro in proc.processes{
+        println!("{:?}", pro);
+    } 
 }

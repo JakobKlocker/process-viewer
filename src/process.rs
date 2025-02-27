@@ -1,5 +1,6 @@
 use std::{fs, os::unix::fs::PermissionsExt, path::PathBuf};
 
+#[derive(Debug)]
 pub struct ProcessInfo{
     pub pid : u32,
     pub name : String
@@ -22,35 +23,23 @@ impl Processes {
         }
     }
 
-    fn get_proc_name_path(path: PathBuf) -> String{
-        fs::read_to_string(path).unwrap()
+    fn get_proc_name_path(&self, path: PathBuf) -> Result<String, std::io::Error>{
+        fs::read_to_string(path)
     }
 
-    pub fn print_folders(&self){
-        let paths = fs::read_dir("/proc/").unwrap();
-        for entry in paths{
-           match entry{
-            Ok(dir_entry) => {
-                // let metadata = dir_entry.metadata().unwrap();
-                let filename = dir_entry.file_name();
-
-
-                if let Some(filename_str) = filename.to_str(){
-                    match filename_str.parse::<u32>(){
-                        Ok(pid) =>{
-                            print!("Pid: {} | Name: {}", pid, Self::get_proc_name_path(dir_entry.path().join("comm")));
-                            
-                        }
-                        Err(err) =>{
-                            println!("Err: {}", err);
-                        }
-                    }
-                }
+    pub fn get_pid_name(&mut self) -> std::io::Result<()>{
+        for entry in fs::read_dir("/proc/")?{
+            let dir_entry = entry?;
+            let filename = dir_entry.file_name();
+            let filename_path = filename.to_string_lossy();
+            if let Ok(pid) = filename_path.parse::<u32>(){
+                let proc_name = fs::read_to_string(dir_entry.path().join("comm"))
+                .map( |s| s.trim().to_owned())
+                .unwrap_or_else( |_| "[Unknown]".into());
+                println!("pid: {}  ---  name:  {}", pid, proc_name);
+                self.processes.push(ProcessInfo::new(pid, proc_name));
             }
-            Err(err) => {
-                println!("{}", err);
-            }
-           } 
         }
-    }
+        Ok(())
+    }   
 }
