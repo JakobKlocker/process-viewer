@@ -18,10 +18,16 @@ use crossterm::{
 
 use process::Processes;
 
-fn list_from_vec(vec: &Vec<ProcessInfo>) -> Vec<ListItem>{
-    vec.iter()
+fn list_from_vec(vec: &Vec<ProcessInfo>) -> List{
+    let items: Vec<ListItem> = vec.iter()
     .map(|p| ListItem::new(format!("Pid: {} - {}", p.pid, p.name)))
-    .collect()
+    .collect();
+
+    List::new(items)
+    .block(Block::default().title("List").borders(Borders::ALL))
+    .style(Style::default().fg(Color::White))
+    .highlight_style(Style::default())
+    .highlight_symbol(">>")
 }
 
 fn main() -> Result<(), io::Error> {
@@ -44,16 +50,9 @@ fn main() -> Result<(), io::Error> {
         let block = Block::default()
             .title("Block")
             .borders(Borders::ALL);
-        let text = Paragraph::new(Span::styled("test", Style::default()))
-        .block(block);
-        let items = [ListItem::new("Item 1"), ListItem::new("Item 2"), ListItem::new("Item 3")];
-        let list = List::new(items)
-        .block(Block::default().title("List").borders(Borders::ALL))
-        .style(Style::default().fg(Color::White))
-        .highlight_style(Style::default())
-        .highlight_symbol(">>");
-                
-        let l = list_from_vec(&proc.get_new_proc_update().unwrap_or_else(|_| vec![ListItem::new("default")]));
+               
+        let binding = Processes::get_pid_name().unwrap_or_else(|_| vec![]);
+        let l = list_from_vec(&binding);
         f.render_stateful_widget(l, size, &mut list_state);
 
         })?;
