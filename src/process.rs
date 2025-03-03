@@ -1,6 +1,6 @@
-use std::{fs, os::unix::fs::PermissionsExt, path::PathBuf};
+use std::{collections::HashSet, fs, os::unix::fs::PermissionsExt, path::PathBuf};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, Hash)]
 pub struct ProcessInfo{
     pub pid : u32,
     pub name : String
@@ -42,39 +42,36 @@ impl Processes {
                 let proc_name = fs::read_to_string(dir_entry.path().join("comm"))
                 .map( |s| s.trim().to_owned())
                 .unwrap_or_else( |_| "[Unknown]".into());
-//                println!("pid: {}  ---  name:  {}", pid, proc_name);
+//                println!("pid: {}  ---  name:  {}", pid, proc_name); 
                 ret.push(ProcessInfo::new(pid, proc_name));
-            }
-        }
+            } 
+        } 
         Ok(ret)
     }
 
-    pub fn update_proc(&mut self, n_proc: &Vec<ProcessInfo>){
-        //first compare
-        let mut found = false;
-        for n_p in n_proc{
-            for proc in &self.processes{
-                if n_p == proc{
-                    found = true;
-                    break;
-                }
-            }
-            if found == false{
-                self.processes.push(n_p.clone());
-                println!("found new proc: {:?}", n_p);
-            }
-            found = false;
-        }
-    }
 
-    pub fn get_new_proc_update(&mut self){
-        let mut new_procs = Self::get_pid_name();
-        match new_procs{
-            Ok(n_proccesses) =>{
+    pub fn update_proc(&mut self, n_proc: &Vec<ProcessInfo>){
+        let old_set: HashSet<ProcessInfo> = self.processes.iter().cloned().collect();
+        let new_set: HashSet<ProcessInfo> = n_proc.iter().cloned().collect();
+        let added: Vec<_> = new_set.difference(&old_set).cloned().collect();
+        let removed: Vec<_> = old_set.difference(&new_set).cloned().collect();
+
+        for p in &added{ 
+            println!("Added: {:?}", p); 
+        }
+        for p in &removed{
+            println!("Removed: {:?}", p);
+        }
+        self.processes = n_proc.clone();
+   }
+
+    pub fn get_new_proc_update(&mut self){ 
+        let mut new_procs = Self::get_pid_name(); 
+        match new_procs{ Ok(n_proccesses) =>{
                 self.update_proc(&n_proccesses);
             }
             Err(err) => {
-                println!("Error gett new procceses");
+                println!("Error getting new procceses");
             }
         }
     }
