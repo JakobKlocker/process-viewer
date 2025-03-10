@@ -1,8 +1,8 @@
 mod process;
 use process::ProcessInfo;
-
+use crossterm::event::KeyModifiers;
 use crossterm::{
-    event::{self, Event},
+    event::{self, Event, KeyCode, KeyEventKind},
     execute,
     terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
@@ -10,11 +10,11 @@ use ratatui::{
     Terminal,
     backend::CrosstermBackend,
     style::{Style, Stylize},
-    widgets::{Block, List, ListItem},
+    widgets::{Block, List, ListItem, ListState},
 };
 use std::io::{self, stdout};
 
-fn main() {
+fn main() -> io::Result<()>{
     // Setup Tui
     enable_raw_mode().unwrap();
     let mut stdout = stdout();
@@ -30,7 +30,9 @@ fn main() {
         .collect();
     
 
-    let selected_proc: usize = 0;
+    let mut selected_proc: usize = 0;
+    let mut state = ListState::default();
+    state.select(Some(selected_proc));
     loop {
         terminal
             .draw(|frame| {
@@ -51,16 +53,32 @@ fn main() {
                     .block(Block::bordered().title("Process Info"))
                     .style(Style::new().white());
 
-                frame.render_widget(list, frame.area());
+                frame.render_stateful_widget(list, frame.area(), &mut state);
             })
             .unwrap();
-
-        // Exit on key press
-        if matches!(event::read().unwrap(), Event::Key(_)) {
-            break;
+        if let event::Event::Key(key) = event::read()? {
+            if key.kind == KeyEventKind::Press {
+                if key.code == KeyCode::Char('q') {
+                    cleanup();
+                    return Ok(());
+                }
+            if key.code == KeyCode::Down && selected_proc < proc.len() - 1{
+                selected_proc += 1;
+                state.select(Some(selected_proc));
+            }
+            
+            if key.code == KeyCode::Up && selected_proc > 0{
+                selected_proc -= 1;
+                state.select(Some(selected_proc));
+            }
+            }
         }
     }
 
+    cleanup();
+}
+
+fn cleanup(){
     disable_raw_mode().unwrap();
     execute!(io::stdout(), LeaveAlternateScreen).unwrap();
 }
