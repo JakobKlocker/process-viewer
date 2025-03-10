@@ -10,6 +10,10 @@ impl ProcessInfo{
     pub fn new(pid: u32, name: String) -> Self {
         Self {pid, name}
     }
+    
+    pub fn to_string(&self) -> String{
+        format!("Pid: {} | Name: {}", self.pid, self.name)
+    }
 }
 
 pub struct Processes{
