@@ -77,34 +77,28 @@ fn handle_key(
 ) -> Result<(), ()> {
     if let event::Event::Key(key) = event::read().map_err(|_| ())? {
         if key.kind == KeyEventKind::Press {
-            if key.code == KeyCode::Char('q') {
-                return Err(());
-            }
-            if (key.code == KeyCode::Down || key.code == KeyCode::Char('k'))
-                && *selected_proc < proc.len() - 1
-            {
-                *selected_proc += 1;
-                state.select(Some(*selected_proc));
-            }
-            if (key.code == KeyCode::Up || key.code == KeyCode::Char('j')) && *selected_proc > 0 {
-                *selected_proc -= 1;
-                state.select(Some(*selected_proc));
-            }
-            if key.code == KeyCode::Left {
-//                let cur_pid = proc[*selected_proc].pid;
-                proc.sort_by_key(|p| Reverse(p.pid));
-//                if let Some(new_index) = proc.iter().position(|p| p.pid == cur_pid){
-//                    *selected_proc = new_index;
-//                }
-//                state.select(Some(*selected_proc));
-            }
-            if key.code == KeyCode::Right {
-//                let cur_pid = proc[*selected_proc].pid;
-                proc.sort_by_key(|p| (p.pid));
-//                if let Some(new_index) = proc.iter().position(|p| p.pid == cur_pid){
-//                    *selected_proc = new_index;
-//                }
-//                state.select(Some(*selected_proc));
+            match key.code{
+                KeyCode::Char('q') =>  return Err(()),
+                KeyCode::Down | KeyCode::Char('j') => {
+                    if *selected_proc < proc.len() - 1{
+                        *selected_proc += 1;
+                        state.select(Some(*selected_proc));
+                    }
+                },
+                KeyCode::Up | KeyCode::Char('k') => {
+                    if *selected_proc > 0{
+                        *selected_proc -= 1;
+                        state.select(Some(*selected_proc));
+                        
+                    }
+                },
+                KeyCode::Left => {
+                    proc.sort_by_key(|p| Reverse(p.pid));
+                },
+                KeyCode::Right => {
+                    proc.sort_by_key(|p| p.pid);
+                },
+                _ => {}
             }
         }
         return Ok(());
