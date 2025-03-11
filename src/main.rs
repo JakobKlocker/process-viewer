@@ -23,12 +23,6 @@ fn main() -> io::Result<()> {
     let mut terminal = Terminal::new(backend).unwrap();
 
     // get proc Info
-    let proc: Vec<String> = process::Processes::get_pid_name()
-        .unwrap()
-        .iter()
-        .map(|p| p.to_string())
-        .collect();
-
     let mut proc: Vec<ProcessInfo> = process::Processes::get_pid_name().unwrap();
 
     let mut selected_proc: usize = 0;
@@ -70,6 +64,11 @@ fn cleanup() {
     execute!(io::stdout(), LeaveAlternateScreen).unwrap();
 }
 
+fn apply_filter(filter_string: &str, proc: &mut Vec<ProcessInfo>){
+    *proc = proc.iter()
+    .filter(|p| p.name.to_lowercase().contains(&filter_string)).cloned().collect();
+}
+
 fn handle_key(
     selected_proc: &mut usize,
     state: &mut ListState,
@@ -98,6 +97,28 @@ fn handle_key(
                 KeyCode::Right => {
                     proc.sort_by_key(|p| p.pid);
                 },
+                KeyCode::Char('/') => {
+                    let mut filter_string = String::new();
+
+                    loop{
+                        if let event::Event::Key(key) = event::read().map_err(|_| ())? {
+                            match key.code {
+                                KeyCode::Esc => break, // Exit input mode
+                                KeyCode::Enter => {
+                                    apply_filter(&filter_string, proc);
+                                    break;
+                                },
+                                KeyCode::Backspace => {
+                                    filter_string.pop();
+                                },
+                                KeyCode::Char(c) => {
+                                    filter_string.push(c);
+                                },
+                                _ => {}
+                            }
+                        }
+                    }
+                }
                 _ => {}
             }
         }
