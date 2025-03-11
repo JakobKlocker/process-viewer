@@ -12,6 +12,7 @@ use ratatui::{
     widgets::{Block, List, ListItem, ListState},
 };
 use std::io::{self, stdout};
+use std::cmp::Reverse;
 
 fn main() -> io::Result<()> {
     // Setup Tui
@@ -27,6 +28,9 @@ fn main() -> io::Result<()> {
         .iter()
         .map(|p| p.to_string())
         .collect();
+    
+    let mut proc: Vec<ProcessInfo> = process::Processes::get_pid_name()
+    .unwrap();
 
     let mut selected_proc: usize = 0;
     let mut state = ListState::default();
@@ -38,12 +42,13 @@ fn main() -> io::Result<()> {
                     .iter()
                     .enumerate()
                     .map(|(i, item)| {
+                        let content = format!("{:<6} {}", item.pid, item.name);
                         let style = if i == selected_proc {
                             Style::new().fg(ratatui::style::Color::Yellow)
                         } else {
                             Style::new()
                         };
-                        ListItem::new(item.clone()).style(style)
+                        ListItem::new(content).style(style)
                     })
                     .collect();
 
@@ -54,7 +59,7 @@ fn main() -> io::Result<()> {
                 frame.render_stateful_widget(list, frame.area(), &mut state);
             })
             .unwrap();
-            if let Err(()) = handle_key(&mut selected_proc, &mut state, &proc.len()){
+            if let Err(()) = handle_key(&mut selected_proc, &mut state, &mut proc){
                 cleanup();
                 return Ok(());
             }
@@ -66,14 +71,14 @@ fn cleanup() {
     execute!(io::stdout(), LeaveAlternateScreen).unwrap();
 }
 
-fn handle_key(selected_proc: &mut usize, state: &mut ListState, proc_len: &usize) -> Result<(), ()> {
+fn handle_key(selected_proc: &mut usize, state: &mut ListState, proc: &mut Vec<ProcessInfo>) -> Result<(), ()> {
     if let event::Event::Key(key) = event::read().map_err(|_| ())? {
         if key.kind == KeyEventKind::Press {
             if key.code == KeyCode::Char('q') {
                 return Err(());
             }
             if (key.code == KeyCode::Down || key.code == KeyCode::Char('k'))
-                && *selected_proc < *proc_len - 1
+                && *selected_proc < proc.len() - 1
             {
                 *selected_proc += 1;
                 state.select(Some(*selected_proc));
@@ -82,6 +87,12 @@ fn handle_key(selected_proc: &mut usize, state: &mut ListState, proc_len: &usize
             if (key.code == KeyCode::Up || key.code == KeyCode::Char('j')) && *selected_proc > 0 {
                 *selected_proc -= 1;
                 state.select(Some(*selected_proc));
+            }
+            if (key.code == KeyCode::Left){
+                proc.sort_by_key(|p| Reverse(p.pid));
+            }
+             if (key.code == KeyCode::Right){
+                proc.sort_by_key(|p| (p.pid));
             }
         }
         return Ok(());
