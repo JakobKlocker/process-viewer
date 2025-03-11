@@ -27,10 +27,20 @@ fn main() -> io::Result<()> {
 
     let mut selected_proc: usize = 0;
     let mut state = ListState::default();
+    let mut filtering = false;
+    let mut filter_string = String::new();
     state.select(Some(selected_proc));
     loop {
         terminal
             .draw(|frame| {
+                let chunks = ratatui::layout::Layout::default()
+                .direction(ratatui::layout::Direction::Vertical)
+                .constraints([
+                    ratatui::layout::Constraint::Min(1),  // Process list takes most space
+                    ratatui::layout::Constraint::Length(3), // Bottom filter field
+                ])
+                .split(frame.area());
+
                 let items: Vec<ListItem> = proc
                     .iter()
                     .enumerate()
@@ -48,11 +58,15 @@ fn main() -> io::Result<()> {
                 let list = List::new(items)
                     .block(Block::bordered().title("Process Info"))
                     .style(Style::new().white());
+                let filter_display = ratatui::widgets::Paragraph::new(format!("Filter: {}", filter_string))
+                .block(Block::bordered().title("Filter Input"))
+                .style(Style::new().fg(if filtering { ratatui::style::Color::Yellow } else { ratatui::style::Color::White }));
 
-                frame.render_stateful_widget(list, frame.area(), &mut state);
+                frame.render_stateful_widget(list, chunks[0], &mut state);
+                frame.render_widget(filter_display,chunks[1]);
             })
             .unwrap();
-        if let Err(()) = handle_key(&mut selected_proc, &mut state, &mut proc) {
+        if let Err(()) = handle_key(&mut selected_proc, &mut state, &mut proc, &mut filtering, &mut filter_string) {
             cleanup();
             return Ok(());
         }
@@ -73,6 +87,8 @@ fn handle_key(
     selected_proc: &mut usize,
     state: &mut ListState,
     proc: &mut Vec<ProcessInfo>,
+    filter: &mut bool,
+    filter_string: &mut String
 ) -> Result<(), ()> {
     if let event::Event::Key(key) = event::read().map_err(|_| ())? {
         if key.kind == KeyEventKind::Press {
@@ -98,8 +114,7 @@ fn handle_key(
                     proc.sort_by_key(|p| p.pid);
                 },
                 KeyCode::Char('/') => {
-                    let mut filter_string = String::new();
-
+                    *filter = true;
                     loop{
                         if let event::Event::Key(key) = event::read().map_err(|_| ())? {
                             match key.code {
