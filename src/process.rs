@@ -66,7 +66,7 @@ impl Processes {
             Ok(n_processes) => {
                 self.update_proc(&n_processes);
             }
-            Err(err) => {
+            Err(_) => {
                 println!("Error getting new procceses");
             }
         }
