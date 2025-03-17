@@ -10,7 +10,7 @@ pub struct App {
 
 impl App {
     pub fn new() -> Self {
-        let processes = Processes::get_pid_name().unwrap_or_default();
+        let processes = Processes::fetch_process_list().unwrap_or_default();
         Self {
             processes,
             selected_proc: 0,
@@ -28,6 +28,7 @@ impl App {
     }
 
     pub fn apply_filter(&mut self) {
-        self.processes.retain(|p| p.name.to_lowercase().contains(&self.filter_string));
+        self.processes
+            .retain(|p| p.name.to_lowercase().contains(&self.filter_string));
     }
 }

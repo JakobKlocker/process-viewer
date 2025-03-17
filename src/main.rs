@@ -1,35 +1,22 @@
+mod app;
 mod process;
-fn main() -> io::Result<()> {
-    // Setup Tui
-    // get proc Info
-    let mut proc: Vec<ProcessInfo> = process::Processes::get_pid_name().unwrap();
+mod tui;
 
-    let mut selected_proc: usize = 0;
-    let mut state = ListState::default();
-    let mut filtering = false;
-    let mut filter_string = String::new();
-    state.select(Some(selected_proc));
+use app::App;
+use std::io;
+use tui::Tui;
+
+fn main() -> io::Result<()> {
+    let mut tui = Tui::new()?;
+    let mut app = App::new();
+
     loop {
-        terminal
-           .unwrap();
-        if let Err(()) = handle_key(
-            &mut selected_proc,
-            &mut state,
-            &mut proc,
-            &mut filtering,
-            &mut filter_string,
-        ) {
-            cleanup();
-            return Ok(());
+        tui.draw(&mut app)?;
+        if let Err(()) = tui.handle_input(&mut app) {
+            break;
         }
     }
-}
 
-fn apply_filter(filter_string: &str, proc: &mut Vec<ProcessInfo>) {
-    *proc = proc
-        .iter()
-        .filter(|p| p.name.to_lowercase().contains(&filter_string))
-        .cloned()
-        .collect();
+    tui.cleanup()?;
+    Ok(())
 }
-
