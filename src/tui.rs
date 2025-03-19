@@ -76,6 +76,33 @@ impl Tui {
 
             frame.render_stateful_widget(list, chunks[0], &mut self.state);
             frame.render_widget(filter_display, chunks[1]);
+            
+
+            if app.state == AppState::ProcessMenu {
+                let popup_layout = Layout::default()
+                    .direction(Direction::Vertical)
+                    .constraints([
+                        Constraint::Percentage(40),
+                        Constraint::Length(7),  // Popup height
+                        Constraint::Percentage(40),
+                    ])
+                    .split(frame.area());
+    
+                let popup_block = Block::bordered().title("Process Actions");
+    
+                let options = vec![
+                    ListItem::new("  [k] Kill Process"),
+                    ListItem::new("  [m] Read Memory Usage"),
+                    ListItem::new("  [b] Back to Process List"),
+                ];
+                
+                let options_list = List::new(options).block(popup_block);
+
+                let overlay = Block::default().style(Style::new().bg(ratatui::style::Color::Black));
+    
+                frame.render_widget(overlay, frame.area()); // Darken the background
+                frame.render_widget(options_list, popup_layout[1]); // Draw popup in the center
+            }
         })?;
         Ok(())
     }
@@ -99,9 +126,8 @@ impl Tui {
                     }
                     KeyCode::Left => app.sort_descending(),
                     KeyCode::Right => app.sort_ascending(),
-                    KeyCode::Char('/') => {
-                        app.state = AppState::Filterting;
-                   }
+                    KeyCode::Enter => app.state = AppState::ProcessMenu,
+                    KeyCode::Char('/') => app.state = AppState::Filterting,
                     _ => {}
                 }
             }

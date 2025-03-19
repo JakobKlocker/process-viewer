@@ -16,6 +16,7 @@ fn main() -> io::Result<()> {
         let result = match app.state{
             AppState::Normal => tui.handle_input_normal(&mut app),
             AppState::Filterting => tui.handle_input_filtering(&mut app),
+            _ => Ok(())
         };
 
         if result.is_err(){
