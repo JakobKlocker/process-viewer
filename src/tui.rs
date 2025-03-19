@@ -83,7 +83,7 @@ impl Tui {
                     .direction(Direction::Vertical)
                     .constraints([
                         Constraint::Percentage(40),
-                        Constraint::Length(7),  // Popup height
+                        Constraint::Length(5),  // Popup height
                         Constraint::Percentage(40),
                     ])
                     .split(frame.area());
