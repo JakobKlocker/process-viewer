@@ -1,4 +1,6 @@
 use crate::app::App;
+use crate::app::AppState;
+
 use crossterm::{
     event::{self, KeyCode, KeyEventKind},
     execute,
@@ -43,7 +45,7 @@ impl Tui {
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
                 .constraints([Constraint::Min(1), Constraint::Length(3)])
-                .split(frame.size());
+                .split(frame.area());
 
             let items: Vec<ListItem> = app
                 .processes
@@ -78,7 +80,7 @@ impl Tui {
         Ok(())
     }
 
-    pub fn handle_input(&mut self, app: &mut App) -> Result<(), ()> {
+    pub fn handle_input_normal(&mut self, app: &mut App) -> Result<(), ()> {
         if let event::Event::Key(key) = event::read().map_err(|_| ())? {
             if key.kind == KeyEventKind::Press {
                 match key.code {
@@ -98,30 +100,33 @@ impl Tui {
                     KeyCode::Left => app.sort_descending(),
                     KeyCode::Right => app.sort_ascending(),
                     KeyCode::Char('/') => {
-                        app.filtering = true;
-                        loop {
-                            if let event::Event::Key(key) = event::read().map_err(|_| ())? {
-                                match key.code {
-                                    KeyCode::Esc => break, // Exit input mode
-                                    KeyCode::Enter => {
-                                        app.apply_filter();
-                                        break;
-                                    }
-                                    KeyCode::Backspace => {
-                                        app.filter_string.pop();
-                                    }
-                                    KeyCode::Char(c) => {
-                                        app.filter_string.push(c);
-                                    }
-                                    _ => {}
-                                }
-                            }
-                        }
+                        app.state = AppState::Filterting;
+                   }
+                    _ => {}
+                }
+            }
+        }
+        Ok(())
+    }
+    
+    pub fn handle_input_filtering(&mut self, app: &mut App) -> Result<(), ()> {
+         if let event::Event::Key(key) = event::read().map_err(|_| ())? {
+            if key.kind == KeyEventKind::Press {
+                match key.code {
+                    KeyCode::Esc => app.state = AppState::Normal, 
+                    KeyCode::Backspace => {
+                        app.filter_string.pop();
+                        app.apply_filter();
+                    }
+                    KeyCode::Char(c) => {
+                        app.filter_string.push(c);
+                        app.apply_filter();
                     }
                     _ => {}
                 }
             }
         }
+
         Ok(())
     }
 }
