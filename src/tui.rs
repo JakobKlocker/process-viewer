@@ -9,9 +9,9 @@ use crossterm::{
 use ratatui::{
     Terminal,
     backend::CrosstermBackend,
-    layout::{Constraint, Direction, Layout},
+    layout::{Constraint, Direction, Rect, Layout},
     style::{Style, Stylize},
-    widgets::{Block, List, ListItem, ListState, Paragraph},
+    widgets::{Block, List, ListItem, ListState, Paragraph, Clear},
 };
 use std::io::{self, stdout};
 
@@ -98,9 +98,8 @@ impl Tui {
                 
                 let options_list = List::new(options).block(popup_block);
 
-                let overlay = Block::default().style(Style::new().bg(ratatui::style::Color::Black));
     
-                frame.render_widget(overlay, frame.area()); // Darken the background
+                frame.render_widget(Clear, frame.area());
                 frame.render_widget(options_list, popup_layout[1]); // Draw popup in the center
             }
         })?;
