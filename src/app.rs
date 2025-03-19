@@ -14,6 +14,7 @@ pub struct App {
     pub filtering: bool,
     pub filter_string: String,
     pub state: AppState,
+    pub selected_menu: usize,
 }
 
 impl App {
@@ -27,6 +28,7 @@ impl App {
             filtering: false,
             filter_string: String::new(),
             state: AppState::Normal,
+            selected_menu: 0,
         }
     }
 

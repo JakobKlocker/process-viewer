@@ -1,5 +1,6 @@
 use crate::app::App;
 use crate::app::AppState;
+use syscalls::*;
 
 use crossterm::{
     event::{self, KeyCode, KeyEventKind},
@@ -18,6 +19,13 @@ use std::io::{self, stdout};
 pub struct Tui {
     terminal: Terminal<CrosstermBackend<std::io::Stdout>>,
     state: ListState,
+}
+
+#[repr(u8)]
+pub enum ProcesMenu{
+    KillProcess,
+    BringForeground,
+    DisplayOnWeb
 }
 
 impl Tui {
@@ -131,6 +139,42 @@ impl Tui {
                 }
             }
         }
+        Ok(())
+    }
+
+    pub fn handle_input_processmenu(&mut self, app: &mut App) -> Result<(), ()> {
+   if let event::Event::Key(key) = event::read().map_err(|_| ())? {
+            if key.kind == KeyEventKind::Press {
+                match key.code {
+                    KeyCode::Down => {
+                        if app.selected_menu < 2{
+                            app.selected_menu += 1;
+                        }
+                    },
+                    KeyCode::Up => {
+                        if app.selected_menu > 0{
+                            app.selected_menu -= 1;
+                        }
+                    },
+                    KeyCode::Enter => {
+                        match app.selected_menu {
+                            //ProcesMenu::KillProcess as u8 => {}//kill process,
+                            0 => {
+                                // kill proc
+                            },
+                            1 => {
+                                // bring foreground
+                            },
+                            2 => {
+                                // stream to web
+                            }
+                        }
+                    },
+                    KeyCode::Esc => app.state = AppState::Normal,
+                    _ => {}
+                }
+            }
+        }             
         Ok(())
     }
     
