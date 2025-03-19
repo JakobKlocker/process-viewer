@@ -3,6 +3,7 @@ mod process;
 mod tui;
 
 use app::App;
+use app::AppState;
 use std::io;
 use tui::Tui;
 
@@ -12,7 +13,12 @@ fn main() -> io::Result<()> {
 
     loop {
         tui.draw(&mut app)?;
-        if let Err(()) = tui.handle_input(&mut app) {
+        let result = match app.state{
+            AppState::Normal => tui.handle_input_normal(&mut app),
+            AppState::Filterting => tui.handle_input_filtering(&mut app),
+        };
+
+        if result.is_err(){
             break;
         }
     }

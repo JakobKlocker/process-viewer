@@ -1,21 +1,30 @@
 use crate::process::{ProcessInfo, Processes};
 use std::cmp::Reverse;
 
+pub enum AppState {
+    Normal,     // Default, navigating
+    Filterting, // Filterting Processes
+}
 pub struct App {
+    pub all_processes: Vec<ProcessInfo>,
     pub processes: Vec<ProcessInfo>,
     pub selected_proc: usize,
     pub filtering: bool,
     pub filter_string: String,
+    pub state: AppState,
 }
 
 impl App {
     pub fn new() -> Self {
-        let processes = Processes::fetch_process_list().unwrap_or_default();
+        let all_processes = Processes::fetch_process_list().unwrap_or_default();
+        let processes = all_processes.clone();
         Self {
+            all_processes,
             processes,
             selected_proc: 0,
             filtering: false,
             filter_string: String::new(),
+            state: AppState::Normal,
         }
     }
 
@@ -26,9 +35,15 @@ impl App {
     pub fn sort_descending(&mut self) {
         self.processes.sort_by_key(|p| Reverse(p.pid));
     }
-
     pub fn apply_filter(&mut self) {
-        self.processes
-            .retain(|p| p.name.to_lowercase().contains(&self.filter_string));
+        self.processes = if self.filter_string.is_empty() {
+            self.all_processes.clone()
+        } else {
+            self.all_processes
+                .iter()
+                .filter(|p| p.name.to_lowercase().contains(&self.filter_string))
+                .cloned()
+                .collect()
+        };
     }
 }
