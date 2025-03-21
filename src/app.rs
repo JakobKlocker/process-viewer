@@ -1,9 +1,11 @@
 use crate::process::{ProcessInfo, Processes};
 use std::cmp::Reverse;
 
+#[derive(PartialEq)]
 pub enum AppState {
     Normal,     // Default, navigating
     Filterting, // Filterting Processes
+    ProcessMenu, // When selecting a process with Enter
 }
 pub struct App {
     pub all_processes: Vec<ProcessInfo>,
@@ -45,5 +47,12 @@ impl App {
                 .cloned()
                 .collect()
         };
+    }
+
+    pub fn reload_processes(&mut self){
+        let all_processes = Processes::fetch_process_list().unwrap_or_default();
+        self.all_processes = all_processes;
+        self.apply_filter();
+        self.selected_proc = 0;
     }
 }
