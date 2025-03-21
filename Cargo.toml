@@ -8,3 +8,6 @@ crossterm = "0.28.1"
 ratatui = "0.29.0"
 ratatui-image = "5.0.0"
 syscalls = "0.6.18"
+tiny_http = "0.11"
+serde_json = "1.0.140"
+serde = {version = "1.0", features = ["derive"]}
