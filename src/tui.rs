@@ -1,8 +1,7 @@
 use crate::app::App;
 use crate::app::AppState;
-use std::convert::TryFrom;
-use std::convert::TryInto;
 use syscalls::*;
+use std::{thread, time::Duration};
 
 use crossterm::{
     event::{self, KeyCode, KeyEventKind},
@@ -113,7 +112,7 @@ impl Tui {
                 match key.code {
                     KeyCode::Char('q') => return Err(()),
                     KeyCode::Down | KeyCode::Char('j') => {
-                        if app.selected_proc < app.processes.len() - 1 {
+                        if app.processes.is_empty() != true && app.selected_proc < app.processes.len() - 1 {
                             app.selected_proc += 1;
                             self.state.select(Some(app.selected_proc));
                         }
@@ -128,6 +127,9 @@ impl Tui {
                     KeyCode::Right => app.sort_ascending(),
                     KeyCode::Enter => app.state = AppState::ProcessMenu,
                     KeyCode::Char('/') => app.state = AppState::Filterting,
+                    KeyCode::Char('r') => {
+                        app.reload_processes();
+                    }
                     _ => {}
                 }
             }
@@ -135,6 +137,7 @@ impl Tui {
         Ok(())
     }
 
+    // To-do: remove the sleep after killing, find a better solution
     pub fn handle_input_processmenu(&mut self, app: &mut App) -> Result<(), ()> {
         if let event::Event::Key(key) = event::read().map_err(|_| ())? {
             if key.kind == KeyEventKind::Press {
@@ -142,6 +145,8 @@ impl Tui {
                     KeyCode::Char('k') => unsafe {
                         syscall!(Sysno::kill, app.processes[app.selected_proc].pid, 9);
                         app.state = AppState::Normal;
+                        thread::sleep(Duration::from_millis(100));
+                        app.reload_processes();
                     },
                     KeyCode::Char('b') => {
                         app.state = AppState::Normal;

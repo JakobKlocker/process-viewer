@@ -14,7 +14,6 @@ pub struct App {
     pub filtering: bool,
     pub filter_string: String,
     pub state: AppState,
-    pub selected_menu: usize,
 }
 
 impl App {
@@ -28,7 +27,6 @@ impl App {
             filtering: false,
             filter_string: String::new(),
             state: AppState::Normal,
-            selected_menu: 0,
         }
     }
 
@@ -49,5 +47,12 @@ impl App {
                 .cloned()
                 .collect()
         };
+    }
+
+    pub fn reload_processes(&mut self){
+        let all_processes = Processes::fetch_process_list().unwrap_or_default();
+        self.all_processes = all_processes;
+        self.apply_filter();
+        self.selected_proc = 0;
     }
 }
