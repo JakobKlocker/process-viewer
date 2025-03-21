@@ -1,5 +1,7 @@
 use crate::app::App;
 use crate::app::AppState;
+use std::convert::TryFrom;
+use std::convert::TryInto;
 use syscalls::*;
 
 use crossterm::{
@@ -10,22 +12,15 @@ use crossterm::{
 use ratatui::{
     Terminal,
     backend::CrosstermBackend,
-    layout::{Constraint, Direction, Rect, Layout},
+    layout::{Constraint, Direction, Layout, Rect},
     style::{Style, Stylize},
-    widgets::{Block, List, ListItem, ListState, Paragraph, Clear},
+    widgets::{Block, Clear, List, ListItem, ListState, Paragraph},
 };
 use std::io::{self, stdout};
 
 pub struct Tui {
     terminal: Terminal<CrosstermBackend<std::io::Stdout>>,
     state: ListState,
-}
-
-#[repr(u8)]
-pub enum ProcesMenu{
-    KillProcess,
-    BringForeground,
-    DisplayOnWeb
 }
 
 impl Tui {
@@ -84,29 +79,27 @@ impl Tui {
 
             frame.render_stateful_widget(list, chunks[0], &mut self.state);
             frame.render_widget(filter_display, chunks[1]);
-            
 
             if app.state == AppState::ProcessMenu {
                 let popup_layout = Layout::default()
                     .direction(Direction::Vertical)
                     .constraints([
                         Constraint::Percentage(40),
-                        Constraint::Length(5),  // Popup height
+                        Constraint::Length(5), // Popup height
                         Constraint::Percentage(40),
                     ])
                     .split(frame.area());
-    
+
                 let popup_block = Block::bordered().title("Process Actions");
-    
+
                 let options = vec![
                     ListItem::new("  [k] Kill Process"),
-                    ListItem::new("  [m] Read Memory Usage"),
+                    ListItem::new("  [f] Bring to foreground"),
                     ListItem::new("  [b] Back to Process List"),
                 ];
-                
+
                 let options_list = List::new(options).block(popup_block);
 
-    
                 frame.render_widget(Clear, frame.area());
                 frame.render_widget(options_list, popup_layout[1]); // Draw popup in the center
             }
@@ -143,46 +136,28 @@ impl Tui {
     }
 
     pub fn handle_input_processmenu(&mut self, app: &mut App) -> Result<(), ()> {
-   if let event::Event::Key(key) = event::read().map_err(|_| ())? {
+        if let event::Event::Key(key) = event::read().map_err(|_| ())? {
             if key.kind == KeyEventKind::Press {
                 match key.code {
-                    KeyCode::Down => {
-                        if app.selected_menu < 2{
-                            app.selected_menu += 1;
-                        }
+                    KeyCode::Char('k') => unsafe {
+                        syscall!(Sysno::kill, app.processes[app.selected_proc].pid, 9);
+                        app.state = AppState::Normal;
                     },
-                    KeyCode::Up => {
-                        if app.selected_menu > 0{
-                            app.selected_menu -= 1;
-                        }
-                    },
-                    KeyCode::Enter => {
-                        match app.selected_menu {
-                            //ProcesMenu::KillProcess as u8 => {}//kill process,
-                            0 => {
-                                // kill proc
-                            },
-                            1 => {
-                                // bring foreground
-                            },
-                            2 => {
-                                // stream to web
-                            }
-                        }
-                    },
-                    KeyCode::Esc => app.state = AppState::Normal,
+                    KeyCode::Char('b') => {
+                        app.state = AppState::Normal;
+                    }
                     _ => {}
                 }
             }
-        }             
+        }
         Ok(())
     }
-    
+
     pub fn handle_input_filtering(&mut self, app: &mut App) -> Result<(), ()> {
-         if let event::Event::Key(key) = event::read().map_err(|_| ())? {
+        if let event::Event::Key(key) = event::read().map_err(|_| ())? {
             if key.kind == KeyEventKind::Press {
                 match key.code {
-                    KeyCode::Esc => app.state = AppState::Normal, 
+                    KeyCode::Esc => app.state = AppState::Normal,
                     KeyCode::Backspace => {
                         app.filter_string.pop();
                         app.apply_filter();
