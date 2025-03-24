@@ -1,7 +1,7 @@
 use crate::app::App;
 use crate::app::AppState;
-use syscalls::*;
 use std::{thread, time::Duration};
+use syscalls::*;
 
 use crossterm::{
     event::{self, KeyCode, KeyEventKind},
@@ -84,7 +84,7 @@ impl Tui {
                     .direction(Direction::Vertical)
                     .constraints([
                         Constraint::Percentage(40),
-                        Constraint::Length(5), // Popup height
+                        Constraint::Length(5),
                         Constraint::Percentage(40),
                     ])
                     .split(frame.area());
@@ -107,30 +107,34 @@ impl Tui {
     }
 
     pub fn handle_input_normal(&mut self, app: &mut App) -> Result<(), ()> {
-        if let event::Event::Key(key) = event::read().map_err(|_| ())? {
-            if key.kind == KeyEventKind::Press {
-                match key.code {
-                    KeyCode::Char('q') => return Err(()),
-                    KeyCode::Down | KeyCode::Char('j') => {
-                        if app.processes.is_empty() != true && app.selected_proc < app.processes.len() - 1 {
-                            app.selected_proc += 1;
-                            self.state.select(Some(app.selected_proc));
+        if event::poll(Duration::from_millis(50)).map_err(|_| ())? {
+            if let event::Event::Key(key) = event::read().map_err(|_| ())? {
+                if key.kind == KeyEventKind::Press {
+                    match key.code {
+                        KeyCode::Char('q') => return Err(()),
+                        KeyCode::Down | KeyCode::Char('j') => {
+                            if app.processes.is_empty() != true
+                                && app.selected_proc < app.processes.len() - 1
+                            {
+                                app.selected_proc += 1;
+                                self.state.select(Some(app.selected_proc));
+                            }
                         }
-                    }
-                    KeyCode::Up | KeyCode::Char('k') => {
-                        if app.selected_proc > 0 {
-                            app.selected_proc -= 1;
-                            self.state.select(Some(app.selected_proc));
+                        KeyCode::Up | KeyCode::Char('k') => {
+                            if app.selected_proc > 0 {
+                                app.selected_proc -= 1;
+                                self.state.select(Some(app.selected_proc));
+                            }
                         }
+                        KeyCode::Left => app.sort_descending(),
+                        KeyCode::Right => app.sort_ascending(),
+                        KeyCode::Enter => app.state = AppState::ProcessMenu,
+                        KeyCode::Char('/') => app.state = AppState::Filterting,
+                        KeyCode::Char('r') => {
+                            app.reload_processes();
+                        }
+                        _ => {}
                     }
-                    KeyCode::Left => app.sort_descending(),
-                    KeyCode::Right => app.sort_ascending(),
-                    KeyCode::Enter => app.state = AppState::ProcessMenu,
-                    KeyCode::Char('/') => app.state = AppState::Filterting,
-                    KeyCode::Char('r') => {
-                        app.reload_processes();
-                    }
-                    _ => {}
                 }
             }
         }
@@ -139,19 +143,21 @@ impl Tui {
 
     // To-do: remove the sleep after killing, find a better solution
     pub fn handle_input_processmenu(&mut self, app: &mut App) -> Result<(), ()> {
-        if let event::Event::Key(key) = event::read().map_err(|_| ())? {
-            if key.kind == KeyEventKind::Press {
-                match key.code {
-                    KeyCode::Char('k') => unsafe {
-                        syscall!(Sysno::kill, app.processes[app.selected_proc].pid, 9);
-                        app.state = AppState::Normal;
-                        thread::sleep(Duration::from_millis(100));
-                        app.reload_processes();
-                    },
-                    KeyCode::Char('b') => {
-                        app.state = AppState::Normal;
+        if event::poll(Duration::from_millis(50)).map_err(|_| ())? {
+            if let event::Event::Key(key) = event::read().map_err(|_| ())? {
+                if key.kind == KeyEventKind::Press {
+                    match key.code {
+                        KeyCode::Char('k') => unsafe {
+                            syscall!(Sysno::kill, app.processes[app.selected_proc].pid, 9);
+                            app.state = AppState::Normal;
+                            thread::sleep(Duration::from_millis(100));
+                            app.reload_processes();
+                        },
+                        KeyCode::Char('b') => {
+                            app.state = AppState::Normal;
+                        }
+                        _ => {}
                     }
-                    _ => {}
                 }
             }
         }
@@ -159,23 +165,24 @@ impl Tui {
     }
 
     pub fn handle_input_filtering(&mut self, app: &mut App) -> Result<(), ()> {
-        if let event::Event::Key(key) = event::read().map_err(|_| ())? {
-            if key.kind == KeyEventKind::Press {
-                match key.code {
-                    KeyCode::Esc => app.state = AppState::Normal,
-                    KeyCode::Backspace => {
-                        app.filter_string.pop();
-                        app.apply_filter();
+        if event::poll(Duration::from_millis(50)).map_err(|_| ())? {
+            if let event::Event::Key(key) = event::read().map_err(|_| ())? {
+                if key.kind == KeyEventKind::Press {
+                    match key.code {
+                        KeyCode::Esc => app.state = AppState::Normal,
+                        KeyCode::Backspace => {
+                            app.filter_string.pop();
+                            app.apply_filter();
+                        }
+                        KeyCode::Char(c) => {
+                            app.filter_string.push(c);
+                            app.apply_filter();
+                        }
+                        _ => {}
                     }
-                    KeyCode::Char(c) => {
-                        app.filter_string.push(c);
-                        app.apply_filter();
-                    }
-                    _ => {}
                 }
             }
         }
-
         Ok(())
     }
 }
