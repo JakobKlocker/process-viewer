@@ -4,6 +4,7 @@ mod tui;
 mod webserver;
 
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 use app::App;
 use app::AppState;
 use std::io;
@@ -29,8 +30,8 @@ fn main() -> io::Result<()> {
         if result.is_err(){
             break;
         }
+        std::thread::sleep(Duration::from_millis(50));
     }
-
     tui.cleanup()?;
     Ok(())
 }
