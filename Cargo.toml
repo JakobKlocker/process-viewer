@@ -11,3 +11,6 @@ syscalls = "0.6.18"
 tiny_http = "0.11"
 serde_json = "1.0.140"
 serde = {version = "1.0", features = ["derive"]}
+zbus = "5.5.0"
+tokio = { version = "1.44.1", features = ["full"] }
+zvariant = "5.4.0"
