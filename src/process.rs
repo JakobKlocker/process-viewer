@@ -1,6 +1,7 @@
 use std::{collections::HashSet, fs};
+use serde::Serialize;
 
-#[derive(Debug, Clone, Eq, Hash)]
+#[derive(Debug, Clone, Eq, Hash, Serialize)]
 pub struct ProcessInfo {
     pub pid: u32,
     pub name: String,

@@ -1,17 +1,23 @@
 mod app;
 mod process;
 mod tui;
+mod webserver;
 
+use std::sync::{Arc, Mutex};
 use app::App;
 use app::AppState;
 use std::io;
 use tui::Tui;
 
 fn main() -> io::Result<()> {
+    let app_arc = Arc::new(Mutex::new(App::new()));
+    
+    let app_for_http = Arc::clone(&app_arc);
+    webserver::start_http_server(app_for_http);
     let mut tui = Tui::new()?;
-    let mut app = App::new();
 
     loop {
+        let mut app = app_arc.lock().unwrap();
         tui.draw(&mut app)?;
         let result = match app.state{
             AppState::Normal => tui.handle_input_normal(&mut app),
