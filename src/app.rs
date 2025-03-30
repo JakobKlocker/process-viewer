@@ -4,14 +4,13 @@ use std::cmp::Reverse;
 #[derive(PartialEq)]
 pub enum AppState {
     Normal,     // Default, navigating
-    Filterting, // Filterting Processes
+    Filtering, // Filterting Processes
     ProcessMenu, // When selecting a process with Enter
 }
 pub struct App {
     pub all_processes: Vec<ProcessInfo>,
     pub processes: Vec<ProcessInfo>,
     pub selected_proc: usize,
-    pub filtering: bool,
     pub filter_string: String,
     pub state: AppState,
 }
@@ -24,7 +23,6 @@ impl App {
             all_processes,
             processes,
             selected_proc: 0,
-            filtering: false,
             filter_string: String::new(),
             state: AppState::Normal,
         }
