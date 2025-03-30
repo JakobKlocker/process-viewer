@@ -46,7 +46,12 @@ impl Tui {
         self.terminal.draw(|frame| {
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
-                .constraints([Constraint::Min(1), Constraint::Length(3)])
+                .constraints([
+                    Constraint::Length(1),
+                    Constraint::Length(1),
+                    Constraint::Min(1),
+                    Constraint::Length(3),
+                ])
                 .split(frame.area());
 
             let items: Vec<ListItem> = app
@@ -76,8 +81,32 @@ impl Tui {
                     ratatui::style::Color::White
                 }));
 
-            frame.render_stateful_widget(list, chunks[0], &mut self.state);
-            frame.render_widget(filter_display, chunks[1]);
+                let (help_msg, mode_str) = match app.state {
+                    AppState::Filtering => (
+                        "Esc: stop filtering",
+                        "Mode: Filtering",
+                    ),
+                    AppState::Normal => (
+                        "↑[k]/↓[j]: Navigate || Enter: Select || q: Quit || /: Filter || r: reload Processes || ←: sort desc. || →: sort asc.",
+                        "Mode: Normal",
+                    ),
+                    AppState::ProcessMenu => (
+                        "↑[k]/↓[j]: Move  Enter: Choose  b: Back",
+                        "Mode: Process Menu",
+                    ),
+                };
+                
+                let help_text = Paragraph::new(help_msg)
+                    .style(Style::new().fg(ratatui::style::Color::Gray));
+                
+                let mode_display = Paragraph::new(mode_str)
+                    .style(Style::new().fg(ratatui::style::Color::Red));
+
+            
+            frame.render_widget(mode_display, chunks[0]);
+            frame.render_widget(help_text, chunks[1]);
+            frame.render_stateful_widget(list, chunks[2], &mut self.state);
+            frame.render_widget(filter_display, chunks[3]);
 
             if app.state == AppState::ProcessMenu {
                 let popup_layout = Layout::default()
@@ -129,7 +158,7 @@ impl Tui {
                         KeyCode::Left => app.sort_descending(),
                         KeyCode::Right => app.sort_ascending(),
                         KeyCode::Enter => app.state = AppState::ProcessMenu,
-                        KeyCode::Char('/') => app.state = AppState::Filterting,
+                        KeyCode::Char('/') => app.state = AppState::Filtering,
                         KeyCode::Char('r') => {
                             app.reload_processes();
                         }
