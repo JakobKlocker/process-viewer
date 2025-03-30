@@ -6,7 +6,6 @@ use std::thread;
 pub fn start_http_server(app: Arc<Mutex<App>>) {
     thread::spawn(move || {
         let server = Server::http("0.0.0.0:1337").unwrap();
-        println!("HTTP server running on http://localhost:1337");
 
         for request in server.incoming_requests() {
             if request.url() == "/processes" {
