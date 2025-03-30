@@ -11,7 +11,7 @@ use crossterm::{
 use ratatui::{
     Terminal,
     backend::CrosstermBackend,
-    layout::{Constraint, Direction, Layout, Rect},
+    layout::{Constraint, Direction, Layout, Rect, Alignment},
     style::{Style, Stylize},
     widgets::{Block, Clear, List, ListItem, ListState, Paragraph},
 };
@@ -71,12 +71,16 @@ impl Tui {
 
             let list = List::new(items)
                 .block(Block::bordered().title("Process Info"))
-                .style(Style::new().white());
+                .style(Style::new().fg(if app.state == AppState::Normal {
+                    ratatui::style::Color::Cyan
+                } else {
+                    ratatui::style::Color::White
+                }));
 
             let filter_display = Paragraph::new(format!("Filter: {}", app.filter_string))
                 .block(Block::bordered().title("Filter Input"))
-                .style(Style::new().fg(if app.filtering {
-                    ratatui::style::Color::Yellow
+                .style(Style::new().fg(if app.state == AppState::Filtering {
+                    ratatui::style::Color::Cyan
                 } else {
                     ratatui::style::Color::White
                 }));
@@ -91,20 +95,21 @@ impl Tui {
                         "Mode: Normal",
                     ),
                     AppState::ProcessMenu => (
-                        "↑[k]/↓[j]: Move  Enter: Choose  b: Back",
+                        "↑[k]/↓[j]: Navigate || k: Kill Process || f: bring to foreground (not working) || b: back to Process List",
                         "Mode: Process Menu",
                     ),
                 };
                 
                 let help_text = Paragraph::new(help_msg)
-                    .style(Style::new().fg(ratatui::style::Color::Gray));
+                    .style(Style::new().fg(ratatui::style::Color::White)).alignment(Alignment::Center);
+
                 
                 let mode_display = Paragraph::new(mode_str)
-                    .style(Style::new().fg(ratatui::style::Color::Red));
+                    .style(Style::new().fg(ratatui::style::Color::Red)).alignment(Alignment::Center);
 
             
-            frame.render_widget(mode_display, chunks[0]);
-            frame.render_widget(help_text, chunks[1]);
+            frame.render_widget(&mode_display, chunks[0]);
+            frame.render_widget(&help_text, chunks[1]);
             frame.render_stateful_widget(list, chunks[2], &mut self.state);
             frame.render_widget(filter_display, chunks[3]);
 
@@ -112,6 +117,8 @@ impl Tui {
                 let popup_layout = Layout::default()
                     .direction(Direction::Vertical)
                     .constraints([
+                        Constraint::Length(1),
+                        Constraint::Length(1),
                         Constraint::Percentage(40),
                         Constraint::Length(5),
                         Constraint::Percentage(40),
@@ -122,15 +129,17 @@ impl Tui {
 
                 let options = vec![
                     ListItem::new("  [k] Kill Process"),
-                    ListItem::new("  [f] Bring to foreground"),
+                    ListItem::new("  [f] Bring to foreground (not working)"),
                     ListItem::new("  [b] Back to Process List"),
                 ];
 
                 let options_list = List::new(options).block(popup_block);
 
                 frame.render_widget(Clear, frame.area());
-                frame.render_widget(options_list, popup_layout[1]); // Draw popup in the center
-            }
+                frame.render_widget(mode_display, popup_layout[0]); 
+                frame.render_widget(help_text, popup_layout[1]); 
+                frame.render_widget(options_list, popup_layout[3]); 
+                }
         })?;
         Ok(())
     }
