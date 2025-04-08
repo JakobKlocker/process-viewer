@@ -5,11 +5,13 @@ use serde::Serialize;
 pub struct ProcessInfo {
     pub pid: u32,
     pub name: String,
+    pub cpu_time: u64,
+    pub memory: u64
 }
 
 impl ProcessInfo {
-    pub fn new(pid: u32, name: String) -> Self {
-        Self { pid, name }
+    pub fn new(pid: u32, name: String, cpu_time: u64, memory: u64) -> Self {
+        Self { pid, name, cpu_time, memory}
     }
 }
 
@@ -41,7 +43,19 @@ impl Processes {
                 let proc_name = fs::read_to_string(dir_entry.path().join("comm"))
                     .map(|s| s.trim().to_owned())
                     .unwrap_or_else(|_| "[Unknown]".into());
-                ret.push(ProcessInfo::new(pid, proc_name));
+                
+                let stat_path = dir_entry.path().join("stat");
+                let stat_content = fs::read_to_string(&stat_path).unwrap_or_default();
+                let stat_fields: Vec<&str> = stat_content.split_whitespace().collect();
+                
+                let utime = fields[13].parse::<u64>().unwrap_or(0);
+                let stime = fields[14].parse::<u64>().unwrap_or(0);
+                let rss_pages = fields[23].parse::<u64>().unwrap_or(0);
+                let page_size = unsafe { libc::sysconf(libc::_SC_PAGESIZE) } as u64;
+                let memory = rss_pages * page_size;
+                let cpu_time = utime + stime;
+
+                ret.push(ProcessInfo::new(pid, proc_name, cpu_time, memory));
             }
         }
         Ok(ret)
