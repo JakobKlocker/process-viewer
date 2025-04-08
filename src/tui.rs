@@ -54,36 +54,41 @@ impl Tui {
                 ])
                 .split(frame.area());
 
-            let items: Vec<ListItem> = app
-                .processes
-                .iter()
-                .enumerate()
-                .map(|(i, item)| {
-                    let content = format!("{:<9} {}", item.pid, item.name);
-                    let style = if i == app.selected_proc {
-                        Style::new().fg(ratatui::style::Color::Yellow)
-                    } else {
-                        Style::new()
-                    };
-                    ListItem::new(content).style(style)
-                })
-                .collect();
+            let header = ListItem::new(format!("{:<9} {:<25} {:>12} {:>10}", "PID", "Name", "Memory(KB)", "CPU"));
+            let items: Vec<ListItem> = std::iter::once(header)
+            .chain(app.processes.iter().enumerate().map(|(i, item)| {
+                let memory_kb = item.memory / 1024;
+                let content = format!(
+                    "{:<9} {:<25} {:>12} {:>10}",
+                    item.pid,
+                    item.name,
+                    memory_kb,
+                    item.cpu_time
+                );
 
-            let list = List::new(items)
-                .block(Block::bordered().title("Process Info").border_style(if app.state == AppState::Normal {
-                    ratatui::style::Color::LightRed
+                let style = if i == app.selected_proc {
+                    Style::new().fg(ratatui::style::Color::Yellow)
                 } else {
-                    ratatui::style::Color::White
-                })
-);
+                    Style::new()
+                };
+
+                ListItem::new(content).style(style)
+            }))
+            .collect();
+
+                    let list = List::new(items)
+                        .block(Block::bordered().title("Process Info").border_style(if app.state == AppState::Normal {
+                            ratatui::style::Color::LightRed
+                        } else {
+                            ratatui::style::Color::White
+                        }));
 
             let filter_display = Paragraph::new(format!("Filter: {}", app.filter_string))
                 .block(Block::bordered().title("Filter Input:").border_style(if app.state == AppState::Filtering {
                     ratatui::style::Color::LightRed
                 } else {
                     ratatui::style::Color::White
-                })
-);
+                }));
                 let (help_msg, mode_str) = match app.state {
                     AppState::Filtering => (
                         "Esc: stop filtering",

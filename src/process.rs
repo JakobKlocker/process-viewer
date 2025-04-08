@@ -1,5 +1,6 @@
 use std::{collections::HashSet, fs};
 use serde::Serialize;
+use libc;
 
 #[derive(Debug, Clone, Eq, Hash, Serialize)]
 pub struct ProcessInfo {
@@ -48,9 +49,9 @@ impl Processes {
                 let stat_content = fs::read_to_string(&stat_path).unwrap_or_default();
                 let stat_fields: Vec<&str> = stat_content.split_whitespace().collect();
                 
-                let utime = fields[13].parse::<u64>().unwrap_or(0);
-                let stime = fields[14].parse::<u64>().unwrap_or(0);
-                let rss_pages = fields[23].parse::<u64>().unwrap_or(0);
+                let utime = stat_fields[13].parse::<u64>().unwrap_or(0);
+                let stime = stat_fields[14].parse::<u64>().unwrap_or(0);
+                let rss_pages = stat_fields[23].parse::<u64>().unwrap_or(0);
                 let page_size = unsafe { libc::sysconf(libc::_SC_PAGESIZE) } as u64;
                 let memory = rss_pages * page_size;
                 let cpu_time = utime + stime;

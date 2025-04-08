@@ -14,3 +14,4 @@ serde = {version = "1.0", features = ["derive"]}
 zbus = "5.5.0"
 tokio = { version = "1.44.1", features = ["full"] }
 zvariant = "5.4.0"
+libc = "0.2.171"
