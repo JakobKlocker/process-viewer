@@ -1,15 +1,32 @@
 use std::{collections::HashSet, fs};
 use serde::Serialize;
+use libc;
+use std::hash::{Hash, Hasher};
+use std::collections::HashMap;
 
-#[derive(Debug, Clone, Eq, Hash, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct ProcessInfo {
     pub pid: u32,
     pub name: String,
+    pub cpu_time: u64,
+    pub memory: u64,
+    pub cpu_percent: f64
+}
+
+impl Eq for ProcessInfo {}
+
+impl Hash for ProcessInfo {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.pid.hash(state);
+        self.name.hash(state);
+        self.cpu_time.hash(state);
+        self.memory.hash(state);
+    }
 }
 
 impl ProcessInfo {
-    pub fn new(pid: u32, name: String) -> Self {
-        Self { pid, name }
+    pub fn new(pid: u32, name: String, cpu_time: u64, memory: u64) -> Self {
+        Self { pid, name, cpu_time, memory, cpu_percent: 0.0}
     }
 }
 
@@ -41,7 +58,22 @@ impl Processes {
                 let proc_name = fs::read_to_string(dir_entry.path().join("comm"))
                     .map(|s| s.trim().to_owned())
                     .unwrap_or_else(|_| "[Unknown]".into());
-                ret.push(ProcessInfo::new(pid, proc_name));
+                
+                let mut memory = 0;
+                let mut cpu_time = 0;
+                let stat_path = dir_entry.path().join("stat");
+                let stat_content = fs::read_to_string(&stat_path).unwrap_or_default();
+                let stat_fields: Vec<&str> = stat_content.split_whitespace().collect();
+                if stat_fields.len() > 23 {
+                    let utime = stat_fields[13].parse::<u64>().unwrap_or(0);
+                    let stime = stat_fields[14].parse::<u64>().unwrap_or(0);
+                    let rss_pages = stat_fields[23].parse::<u64>().unwrap_or(0);
+                    let page_size = unsafe { libc::sysconf(libc::_SC_PAGESIZE) } as u64;
+                    memory = rss_pages * page_size;
+                    cpu_time = utime + stime;
+                }
+                    
+                ret.push(ProcessInfo::new(pid, proc_name, cpu_time, memory));
             }
         }
         Ok(ret)
