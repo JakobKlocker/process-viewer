@@ -54,16 +54,17 @@ impl Tui {
                 ])
                 .split(frame.area());
 
-            let header = ListItem::new(format!("{:<9} {:<25} {:>12} {:>10}", "PID", "Name", "Memory(KB)", "CPU"));
+            let header = ListItem::new(format!("{:<9} {:<25} {:>12} {:>10}, {:>10}", "PID", "Name", "Memory(KB)", "CPU-Time", "CPU%"));
             let items: Vec<ListItem> = std::iter::once(header)
             .chain(app.processes.iter().enumerate().map(|(i, item)| {
                 let memory_kb = item.memory / 1024;
                 let content = format!(
-                    "{:<9} {:<25} {:>12} {:>10}",
+                    "{:<9} {:<25} {:>12} {:>10} {:>10.1}",
                     item.pid,
                     item.name,
                     memory_kb,
-                    item.cpu_time
+                    item.cpu_time,
+                    item.cpu_percent
                 );
 
                 let style = if i == app.selected_proc {

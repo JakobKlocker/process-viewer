@@ -51,6 +51,6 @@ impl App {
         let all_processes = Processes::fetch_process_list().unwrap_or_default();
         self.all_processes = all_processes;
         self.apply_filter();
-        self.selected_proc = 0;
+        //self.selected_proc = 0;    since reloading happening all the time, this might crash if its high and on reload proceses are less than before...
     }
 }
