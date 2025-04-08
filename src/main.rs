@@ -50,7 +50,7 @@ fn main() -> io::Result<()> {
                 break;
             }
         }
-        std::thread::sleep(Duration::from_millis(50));
+        std::thread::sleep(Duration::from_millis(10));
     }
     tui.cleanup()?;
     Ok(())

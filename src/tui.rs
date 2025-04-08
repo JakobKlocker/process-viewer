@@ -78,14 +78,14 @@ impl Tui {
             .collect();
 
                     let list = List::new(items)
-                        .block(Block::bordered().title("Process Info").border_style(if app.state == AppState::Normal {
+                        .block(Block::bordered().title("Process Info").bg(ratatui::style::Color::Black).border_style(if app.state == AppState::Normal {
                             ratatui::style::Color::LightRed
                         } else {
                             ratatui::style::Color::White
                         }));
 
             let filter_display = Paragraph::new(format!("Filter: {}", app.filter_string))
-                .block(Block::bordered().title("Filter Input:").border_style(if app.state == AppState::Filtering {
+                .block(Block::bordered().title("Filter Input:").bg(ratatui::style::Color::Black).border_style(if app.state == AppState::Filtering {
                     ratatui::style::Color::LightRed
                 } else {
                     ratatui::style::Color::White
@@ -106,11 +106,11 @@ impl Tui {
                 };
                 
                 let help_text = Paragraph::new(help_msg)
-                    .style(Style::new().fg(ratatui::style::Color::White)).alignment(Alignment::Center);
+                    .style(Style::new().bg(ratatui::style::Color::Black).fg(ratatui::style::Color::White)).alignment(Alignment::Center);
 
                 
                 let mode_display = Paragraph::new(mode_str)
-                    .style(Style::new().fg(ratatui::style::Color::Red)).alignment(Alignment::Center);
+                    .style(Style::new().bg(ratatui::style::Color::Black).fg(ratatui::style::Color::Red)).alignment(Alignment::Center);
 
             
             frame.render_widget(&mode_display, chunks[0]);
