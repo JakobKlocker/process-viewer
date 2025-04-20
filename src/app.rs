@@ -7,10 +7,17 @@ pub enum AppState {
     Filtering,   // Filterting Processes
     ProcessMenu, // When selecting a process with Enter
 }
+
+#[derive(PartialEq)]
+pub enum ProcessOrder {
+    Ascending,
+    Descending,
+}
 pub struct App {
     pub all_processes: Vec<ProcessInfo>,
     pub processes: Vec<ProcessInfo>,
     pub selected_proc: usize,
+    pub process_order: ProcessOrder,
     pub filter_string: String,
     pub state: AppState,
 }
@@ -23,16 +30,19 @@ impl App {
             all_processes,
             processes,
             selected_proc: 0,
+            process_order: ProcessOrder::Ascending,
             filter_string: String::new(),
             state: AppState::Normal,
         }
     }
 
     pub fn sort_ascending(&mut self) {
+        self.process_order = ProcessOrder::Ascending;
         self.processes.sort_by_key(|p| p.pid);
     }
 
     pub fn sort_descending(&mut self) {
+        self.process_order = ProcessOrder::Descending;
         self.processes.sort_by_key(|p| Reverse(p.pid));
     }
     pub fn apply_filter(&mut self) {
@@ -51,6 +61,11 @@ impl App {
         let all_processes = Processes::fetch_process_list().unwrap_or_default();
         self.all_processes = all_processes;
         self.apply_filter();
+        if self.process_order == ProcessOrder::Ascending {
+            self.sort_ascending();
+        } else {
+            self.sort_descending();
+        }
         //self.selected_proc = 0;    since reloading happening all the time, this might crash if its high and on reload proceses are less than before...
     }
 }
