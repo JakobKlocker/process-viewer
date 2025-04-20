@@ -49,11 +49,17 @@ impl App {
         self.processes = if self.filter_string.is_empty() {
             self.all_processes.clone()
         } else {
-            self.all_processes
+            let proc: Vec<ProcessInfo> = self.all_processes
                 .iter()
                 .filter(|p| p.name.to_lowercase().contains(&self.filter_string))
                 .cloned()
-                .collect()
+                .collect();
+
+            if self.selected_proc >= proc.len() {
+                self.selected_proc = 0;
+            };
+            proc
+
         };
     }
 
