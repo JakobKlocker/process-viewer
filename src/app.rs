@@ -65,6 +65,9 @@ impl App {
 
     pub fn reload_processes(&mut self) {
         let all_processes = Processes::fetch_process_list().unwrap_or_default();
+        if self.selected_proc > all_processes.len(){
+            self.selected_proc = all_processes.len() - 1;
+        }
         self.all_processes = all_processes;
         self.apply_filter();
         if self.process_order == ProcessOrder::Ascending {
