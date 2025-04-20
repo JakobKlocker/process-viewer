@@ -5,7 +5,7 @@ use tiny_http::{Response, Server};
 
 pub fn start_http_server(app: Arc<Mutex<App>>) {
     thread::spawn(move || {
-        let server = Server::http("0.0.0.0:1337").unwrap();
+        let server = Server::http("0.0.0.0:4242").unwrap();
 
         for request in server.incoming_requests() {
             if request.url() == "/processes" {
