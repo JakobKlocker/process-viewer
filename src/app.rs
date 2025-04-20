@@ -75,7 +75,6 @@ impl App {
         } else {
             self.sort_descending();
         }
-        //self.selected_proc = 0;    since reloading happening all the time, this might crash if its high and on reload proceses are less than before...
     }
 }
 

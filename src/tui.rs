@@ -144,7 +144,7 @@ impl Tui {
                     ])
                     .split(frame.area());
 
-                let popup_block = Block::bordered().title("Process Actions");
+                let popup_block = Block::bordered().title("Process Actions").bg(ratatui::style::Color::Black);
 
                 let options = vec![
                     ListItem::new("  [k] Kill Process"),
@@ -153,11 +153,14 @@ impl Tui {
                 ];
 
                 let options_list = List::new(options).block(popup_block);
+                let black_bg = Block::default().style(Style::default().bg(ratatui::style::Color::Black));
 
                 frame.render_widget(Clear, frame.area());
                 frame.render_widget(mode_display, popup_layout[0]);
                 frame.render_widget(help_text, popup_layout[1]);
+                frame.render_widget(&black_bg, popup_layout[2]);
                 frame.render_widget(options_list, popup_layout[3]);
+                frame.render_widget(&black_bg, popup_layout[4]);
                 }
         })?;
         Ok(())
