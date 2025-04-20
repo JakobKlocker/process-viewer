@@ -110,3 +110,44 @@ impl Processes {
         }
     }
 }
+
+#[test]
+fn test_processinfo_new() {
+    let proc = ProcessInfo::new(42, "testproc".to_string(), 123, 4096);
+    assert_eq!(proc.pid, 42);
+    assert_eq!(proc.name, "testproc");
+    assert_eq!(proc.cpu_time, 123);
+    assert_eq!(proc.memory, 4096);
+    assert_eq!(proc.cpu_percent, 0.0);
+}
+
+#[test]
+fn test_processinfo_equality() {
+    let p1 = ProcessInfo::new(1, "bash".into(), 100, 2000);
+    let p2 = ProcessInfo::new(1, "bash".into(), 999, 9999); 
+    assert_eq!(p1, p2); 
+}
+
+#[test]
+fn test_update_proc_detects_changes() {
+    let mut processes = Processes { processes: vec![
+        ProcessInfo::new(1, "a".into(), 10, 100),
+        ProcessInfo::new(2, "b".into(), 20, 200),
+    ]};
+
+    let new_list = vec![
+        ProcessInfo::new(2, "b".into(), 20, 200), 
+        ProcessInfo::new(3, "c".into(), 30, 300),
+    ];
+
+    processes.update_proc(&new_list);
+    assert_eq!(processes.processes.len(), 2);
+    assert!(processes.processes.iter().any(|p| p.pid == 3));
+    assert!(!processes.processes.iter().any(|p| p.pid == 1));
+}
+
+#[test]
+fn test_refresh_processes_doesnt_panic() {
+    let mut p = Processes { processes: vec![] };
+    p.refresh_processses(); 
+}
