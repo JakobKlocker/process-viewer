@@ -1,7 +1,7 @@
-use num_cpus;
-use std::time::Instant;
 use crate::process::ProcessInfo;
+use num_cpus;
 use std::collections::HashMap;
+use std::time::Instant;
 
 pub struct CpuTracker {
     pub last_total_ticks: u64,
@@ -17,14 +17,11 @@ impl CpuTracker {
             last_check: Instant::now(),
         }
     }
-    
-    pub fn update_process_cpu(
-        &mut self,
-        processes: &mut Vec<ProcessInfo>,
-    ) {
+
+    pub fn update_process_cpu(&mut self, processes: &mut Vec<ProcessInfo>) {
         let now = Instant::now();
         let delta_total_ticks = read_total_system_ticks() - self.last_total_ticks;
-        let elapsed = now.duration_since(self.last_check).as_secs_f64();
+        let _elapsed = now.duration_since(self.last_check).as_secs_f64();
         let num_cpus = num_cpus::get() as f64;
 
         for proc in processes {
@@ -49,10 +46,9 @@ impl CpuTracker {
 
 fn read_total_system_ticks() -> u64 {
     let stat = std::fs::read_to_string("/proc/stat").unwrap();
-    let line = stat.lines().next().unwrap(); 
-        line.split_whitespace()
+    let line = stat.lines().next().unwrap();
+    line.split_whitespace()
         .skip(1)
         .filter_map(|s| s.parse::<u64>().ok())
         .sum()
 }
-
