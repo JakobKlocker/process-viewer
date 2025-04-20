@@ -1,8 +1,7 @@
-use std::{collections::HashSet, fs};
-use serde::Serialize;
 use libc;
+use serde::Serialize;
 use std::hash::{Hash, Hasher};
-use std::collections::HashMap;
+use std::{collections::HashSet, fs};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct ProcessInfo {
@@ -10,7 +9,7 @@ pub struct ProcessInfo {
     pub name: String,
     pub cpu_time: u64,
     pub memory: u64,
-    pub cpu_percent: f64
+    pub cpu_percent: f64,
 }
 
 impl Eq for ProcessInfo {}
@@ -26,7 +25,13 @@ impl Hash for ProcessInfo {
 
 impl ProcessInfo {
     pub fn new(pid: u32, name: String, cpu_time: u64, memory: u64) -> Self {
-        Self { pid, name, cpu_time, memory, cpu_percent: 0.0}
+        Self {
+            pid,
+            name,
+            cpu_time,
+            memory,
+            cpu_percent: 0.0,
+        }
     }
 }
 
@@ -58,7 +63,7 @@ impl Processes {
                 let proc_name = fs::read_to_string(dir_entry.path().join("comm"))
                     .map(|s| s.trim().to_owned())
                     .unwrap_or_else(|_| "[Unknown]".into());
-                
+
                 let mut memory = 0;
                 let mut cpu_time = 0;
                 let stat_path = dir_entry.path().join("stat");
@@ -72,7 +77,7 @@ impl Processes {
                     memory = rss_pages * page_size;
                     cpu_time = utime + stime;
                 }
-                    
+
                 ret.push(ProcessInfo::new(pid, proc_name, cpu_time, memory));
             }
         }

@@ -6,20 +6,20 @@ use syscalls::*;
 use crossterm::{
     event::{self, KeyCode, KeyEventKind},
     execute,
-    terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use ratatui::{
-    Terminal,
     backend::CrosstermBackend,
-    layout::{Constraint, Direction, Layout, Rect, Alignment},
+    layout::{Alignment, Constraint, Direction, Layout},
     style::{Style, Stylize},
-    widgets::{Block, Clear, List, ListItem, ListState, Paragraph},
+    widgets::{Block, Cell, Clear, List, ListItem, Paragraph, Row, Table, TableState},
+    Terminal,
 };
 use std::io::{self, stdout};
 
 pub struct Tui {
     terminal: Terminal<CrosstermBackend<std::io::Stdout>>,
-    state: ListState,
+    state: TableState,
 }
 
 impl Tui {
@@ -32,7 +32,7 @@ impl Tui {
 
         Ok(Self {
             terminal,
-            state: ListState::default(),
+            state: TableState::default(),
         })
     }
 
@@ -54,35 +54,49 @@ impl Tui {
                 ])
                 .split(frame.area());
 
-            let header = ListItem::new(format!("{:<9} {:<25} {:>12} {:>10}, {:>10}", "PID", "Name", "Memory(KB)", "CPU-Time", "CPU%"));
-            let items: Vec<ListItem> = std::iter::once(header)
-            .chain(app.processes.iter().enumerate().map(|(i, item)| {
-                let memory_kb = item.memory / 1024;
-                let content = format!(
-                    "{:<9} {:<25} {:>12} {:>10} {:>10.1}",
-                    item.pid,
-                    item.name,
-                    memory_kb,
-                    item.cpu_time,
-                    item.cpu_percent
-                );
+                let header = Row::new(vec![
+                    Cell::from("PID"),
+                    Cell::from("Name"),
+                    Cell::from("Memory(KB)"),
+                    Cell::from("CPU-Time"),
+                    Cell::from("CPU%"),
+                ])
+                .style(Style::default().bold());
 
-                let style = if i == app.selected_proc {
-                    Style::new().fg(ratatui::style::Color::Yellow)
+                let rows = app.processes.iter().enumerate().map(|(i, item)| {
+                    let memory_kb = item.memory / 1024;
+                    let style = if i == app.selected_proc {
+                        Style::default().fg(ratatui::style::Color::Yellow)
+                    } else {
+                        Style::default()
+                    };
+
+                    Row::new(vec![
+                        Cell::from(item.pid.to_string()),
+                        Cell::from(item.name.clone()),
+                        Cell::from(memory_kb.to_string()),
+                        Cell::from(item.cpu_time.to_string()),
+                        Cell::from(format!("{:.1}", item.cpu_percent)),
+                    ])
+                    .style(style)
+                });
+
+            let widths =
+            [
+                Constraint::Length(9),
+                Constraint::Length(25),
+                Constraint::Length(12),
+                Constraint::Length(10),
+                Constraint::Length(10),
+            ];
+            let table = Table::new(rows, widths)
+                .header(header)
+                .block(Block::bordered().title("Process Info").bg(ratatui::style::Color::Black).border_style(if app.state == AppState::Normal {
+                    ratatui::style::Color::LightRed
                 } else {
-                    Style::new()
-                };
-
-                ListItem::new(content).style(style)
-            }))
-            .collect();
-
-                    let list = List::new(items)
-                        .block(Block::bordered().title("Process Info").bg(ratatui::style::Color::Black).border_style(if app.state == AppState::Normal {
-                            ratatui::style::Color::LightRed
-                        } else {
-                            ratatui::style::Color::White
-                        }));
+                    ratatui::style::Color::White
+                }))
+               .column_spacing(1); // optional: space between columns
 
             let filter_display = Paragraph::new(format!("Filter: {}", app.filter_string))
                 .block(Block::bordered().title("Filter Input:").bg(ratatui::style::Color::Black).border_style(if app.state == AppState::Filtering {
@@ -104,18 +118,18 @@ impl Tui {
                         "Mode: Process Menu",
                     ),
                 };
-                
+
                 let help_text = Paragraph::new(help_msg)
                     .style(Style::new().bg(ratatui::style::Color::Black).fg(ratatui::style::Color::White)).alignment(Alignment::Center);
 
-                
+
                 let mode_display = Paragraph::new(mode_str)
                     .style(Style::new().bg(ratatui::style::Color::Black).fg(ratatui::style::Color::Red)).alignment(Alignment::Center);
 
-            
+
             frame.render_widget(&mode_display, chunks[0]);
             frame.render_widget(&help_text, chunks[1]);
-            frame.render_stateful_widget(list, chunks[2], &mut self.state);
+            frame.render_stateful_widget(table, chunks[2], &mut self.state);
             frame.render_widget(filter_display, chunks[3]);
 
             if app.state == AppState::ProcessMenu {
@@ -141,9 +155,9 @@ impl Tui {
                 let options_list = List::new(options).block(popup_block);
 
                 frame.render_widget(Clear, frame.area());
-                frame.render_widget(mode_display, popup_layout[0]); 
-                frame.render_widget(help_text, popup_layout[1]); 
-                frame.render_widget(options_list, popup_layout[3]); 
+                frame.render_widget(mode_display, popup_layout[0]);
+                frame.render_widget(help_text, popup_layout[1]);
+                frame.render_widget(options_list, popup_layout[3]);
                 }
         })?;
         Ok(())
